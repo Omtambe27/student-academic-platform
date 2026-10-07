@@ -27,12 +27,15 @@ class MarksManagement:
             e["student_id"] == student_id and e["course_id"] == course_id
             for e in db.enrollments
         ):
-            raise ValueError("Student must be enrolled before a grade can be recorded.")
+            raise ValueError(
+                "Student must be enrolled before a grade can be recorded."
+            )
 
         existing = next(
             (
                 g for g in db.grades
-                if g["student_id"] == student_id and g["course_id"] == course_id
+                if g["student_id"] == student_id
+                and g["course_id"] == course_id
             ),
             None,
         )

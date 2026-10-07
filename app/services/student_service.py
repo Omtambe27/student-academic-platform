@@ -37,6 +37,7 @@ class StudentService:
     def enroll_student(student_id, course_id):
         student = db.students.get(student_id)
         course = db.courses.get(course_id)
+
         if not student:
             raise ValueError(f"Student '{student_id}' not found.")
         if not course:
@@ -53,11 +54,19 @@ class StudentService:
         current_credits = sum(
             db.courses[e["course_id"]]["credits"]
             for e in db.enrollments
-            if e["student_id"] == student_id and e["semester"] == student["semester"]
+            if (
+                e["student_id"] == student_id
+                and e["semester"] == student["semester"]
+            )
         )
-        if current_credits + course["credits"] > StudentService.MAX_SEMESTER_CREDITS:
+
+        if (
+            current_credits + course["credits"]
+            > StudentService.MAX_SEMESTER_CREDITS
+        ):
             raise ValueError(
-                f"Semester credit limit exceeded (Max: {StudentService.MAX_SEMESTER_CREDITS})."
+                "Semester credit limit exceeded "
+                f"(Max: {StudentService.MAX_SEMESTER_CREDITS})."
             )
 
         enrollment = {
@@ -73,5 +82,8 @@ class StudentService:
     @staticmethod
     def get_enrollments(student_id=None):
         if student_id:
-            return [e for e in db.enrollments if e["student_id"] == student_id]
+            return [
+                e for e in db.enrollments
+                if e["student_id"] == student_id
+            ]
         return list(db.enrollments)
