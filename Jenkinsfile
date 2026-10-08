@@ -18,11 +18,10 @@ pipeline {
         stage('Environment Setup & Dependencies') {
             steps {
                 echo 'Setting up Python virtual environment and installing packages...'
-                sh '''
-                    python3 -m venv venv
-                    . venv/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
+                bat '''
+                    python -m venv venv
+                    venv\\Scripts\\python.exe -m pip install --upgrade pip
+                    venv\\Scripts\\python.exe -m pip install -r requirements.txt
                 '''
             }
         }
@@ -30,9 +29,8 @@ pipeline {
         stage('Code Linting & Syntax Gate') {
             steps {
                 echo 'Executing static syntax and style checks via Flake8...'
-                sh '''
-                    . venv/bin/activate
-                    flake8 app/ database/ --count --select=E9,F63,F7,F82 --show-source --statistics
+                bat '''
+                    venv\\Scripts\\flake8.exe app database --count --select=E9,F63,F7,F82 --show-source --statistics
                 '''
             }
         }
@@ -40,10 +38,9 @@ pipeline {
         stage('Automated Unit & Integration Tests') {
             steps {
                 echo 'Running Pytest test suites and exporting JUnit XML reports...'
-                sh '''
-                    . venv/bin/activate
-                    mkdir -p reports
-                    pytest -v --cov=app --junitxml=reports/test-results.xml tests/
+                bat '''
+                    if not exist reports mkdir reports
+                    venv\\Scripts\\pytest.exe -v --cov=app --junitxml=reports\\test-results.xml tests
                 '''
             }
         }
@@ -51,9 +48,9 @@ pipeline {
         stage('Build Docker Artifact') {
             steps {
                 echo "Packaging container image: ${DOCKER_IMAGE_NAME}:${IMAGE_TAG}..."
-                sh '''
-                    docker build -t ${DOCKER_IMAGE_NAME}:${IMAGE_TAG} .
-                    docker tag ${DOCKER_IMAGE_NAME}:${IMAGE_TAG} ${DOCKER_IMAGE_NAME}:latest
+                bat '''
+                    docker build -t %DOCKER_IMAGE_NAME%:%IMAGE_TAG% .
+                    docker tag %DOCKER_IMAGE_NAME%:%IMAGE_TAG% %DOCKER_IMAGE_NAME%:latest
                 '''
             }
         }
@@ -61,9 +58,9 @@ pipeline {
         stage('Kubernetes Minikube Deployment') {
             steps {
                 echo 'Applying Kubernetes manifests to Minikube cluster...'
-                sh '''
-                    kubectl apply -f k8s/deployment.yaml
-                    kubectl apply -f k8s/service.yaml
+                bat '''
+                    kubectl apply -f k8s\\deployment.yaml
+                    kubectl apply -f k8s\\service.yaml
                     kubectl rollout status deployment/student-academic-deployment --timeout=60s
                 '''
             }
@@ -76,9 +73,11 @@ pipeline {
             junit allowEmptyResults: true, testResults: 'reports/test-results.xml'
             archiveArtifacts artifacts: 'reports/test-results.xml', allowEmptyArchive: true
         }
+
         success {
             echo "CI/CD Pipeline executed successfully for build #${BUILD_NUMBER}!"
         }
+
         failure {
             echo "Build #${BUILD_NUMBER} FAILED! Inspect console log output for root cause."
         }
