@@ -9,8 +9,10 @@ def client():
     db.reset()
     app = create_app()
     app.config["TESTING"] = True
+
     with app.test_client() as test_client:
         yield test_client
+
     db.reset()
 
 
@@ -45,3 +47,15 @@ def test_enrollment_and_gpa_flow(client):
     gpa = client.get("/api/students/S101/gpa")
     assert gpa.status_code == 200
     assert gpa.get_json()["gpa"] == 9.0
+
+
+def test_faculty_endpoint(client):
+    response = client.get("/api/faculty")
+
+    assert response.status_code == 200
+
+    data = response.get_json()
+
+    assert "count" in data
+    assert "faculty" in data
+    assert data["count"] == len(data["faculty"])
